@@ -1,1 +1,650 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reto: Relaciona Palabras - Senshi-Kan</title>
+    <style>
+        :root {
+            --bg-principal: #111827;
+            --bg-card: #1f2937;
+            --txt-principal: #f9fafb;
+            --txt-secundario: #9ca3af;
+            --color-rojo: #dc2626;
+            --color-rojo-hover: #b91c1c;
+            --color-verde: #059669;
+            --color-borde: #374151;
+            --color-accent: #d97706;
+        }
 
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-principal);
+            color: var(--txt-principal);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .contenedor-reto {
+            background-color: var(--bg-card);
+            border: 2px solid var(--color-borde);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 800px;
+            padding: 30px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+        }
+
+        .encabezado {
+            text-align: center;
+            border-bottom: 2px solid var(--color-rojo);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .encabezado h1 {
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--txt-principal);
+        }
+
+        .encabezado p {
+            color: var(--txt-secundario);
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .pantalla {
+            display: none;
+        }
+
+        .activa {
+            display: block;
+        }
+
+        /* Pantalla de Inicio */
+        .pantalla-inicio {
+            text-align: center;
+        }
+
+        .info-alumno {
+            background-color: rgba(217, 119, 6, 0.1);
+            border: 1px solid var(--color-accent);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        .instrucciones {
+            text-align: left;
+            background-color: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        .instrucciones h3 {
+            color: var(--color-accent);
+            margin-bottom: 10px;
+        }
+
+        .instrucciones ul {
+            margin-left: 20px;
+        }
+
+        /* Área de Juego */
+        .tablero-juego {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        @media (max-width: 600px) {
+            .tablero-juego {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .columna {
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--color-borde);
+        }
+
+        .columna h2 {
+            font-size: 16px;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 15px;
+            color: var(--txt-secundario);
+            border-bottom: 1px solid var(--color-borde);
+            padding-bottom: 8px;
+        }
+
+        .lista-palabras {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .item-emparejado {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.02);
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px dashed var(--color-borde);
+        }
+
+        .palabra-jp {
+            background-color: rgba(220, 38, 38, 0.15);
+            border: 1px solid var(--color-rojo);
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 15px;
+        }
+
+        .zona-soltar {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 2px dashed var(--color-borde);
+            min-height: 42px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .zona-soltar.dragover {
+            background-color: rgba(217, 119, 6, 0.2);
+            border-color: var(--color-accent);
+        }
+
+        .palabra-es {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--color-borde);
+            padding: 8px 12px;
+            border-radius: 6px;
+            text-align: center;
+            cursor: grab;
+            width: 100%;
+            user-select: none;
+            font-size: 14px;
+            transition: transform 0.1s ease;
+        }
+
+        .palabra-es:active {
+            cursor: grabbing;
+        }
+
+        .palabra-es.arrastrando {
+            opacity: 0.4;
+        }
+
+        .banco-opciones {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        /* Botones */
+        .btn {
+            background-color: var(--color-rojo);
+            color: var(--txt-principal);
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            text-transform: uppercase;
+            width: 100%;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn:hover {
+            background-color: var(--color-rojo-hover);
+        }
+
+        .btn:disabled {
+            background-color: #4b5563;
+            color: #9ca3af;
+            cursor: not-allowed;
+            border-color: #374151;
+        }
+
+        .btn-evaluar {
+            background-color: var(--color-accent);
+            margin-top: 15px;
+        }
+
+        .btn-evaluar:hover {
+            background-color: #b45309;
+        }
+
+        /* Pantalla de Resultados */
+        .pantalla-resultados {
+            text-align: center;
+        }
+
+        .marcador-puntos {
+            font-size: 48px;
+            font-weight: bold;
+            color: var(--color-accent);
+            margin: 20px 0;
+        }
+
+        .feedback-mensaje {
+            font-size: 18px;
+            margin-bottom: 30px;
+            color: var(--txt-secundario);
+        }
+
+        /* Estados de validación visual */
+        .correcto {
+            border-color: var(--color-verde) !important;
+            background-color: rgba(5, 150, 105, 0.15) !important;
+        }
+
+        .incorrecto {
+            border-color: var(--color-rojo) !important;
+            background-color: rgba(220, 38, 38, 0.15) !important;
+        }
+
+        .mensaje-bloqueo {
+            color: var(--color-rojo);
+            font-weight: bold;
+            margin-top: 15px;
+            font-size: 15px;
+        }
+
+        #capa-carga {
+            text-align: center;
+            padding: 20px;
+            color: var(--color-accent);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="contenedor-reto">
+        <div class="encabezado">
+            <h1>Relaciona Palabras</h1>
+            <p>Vocabulario Técnico de Karate Do</p>
+        </div>
+
+        <div id="capa-carga">Verificando límites diarios del alumno...</div>
+
+        <div id="pantalla-inicio" class="pantalla">
+            <div class="info-alumno">
+                Alumno: <span id="lbl-nombre-alumno">Cargando...</span>
+            </div>
+            <div class="instrucciones">
+                <h3>Instrucciones de la Actividad:</h3>
+                <p>A continuación se presentarán 10 palabras en japonés seleccionadas de forma completamente aleatoria.</p>
+                <br>
+                <ul>
+                    <li>Arrastra las tarjetas de significados en español desde el banco inferior.</li>
+                    <li>Sueltalas en los recuadros correspondientes ubicados al lado derecho de cada término japonés.</li>
+                    <li>Cuando estés seguro de todas tus respuestas, presiona el botón <strong>EVALUAR</strong>.</li>
+                </ul>
+            </div>
+            <button id="btn-iniciar" class="btn" disabled>Iniciar Prueba</button>
+            <div id="msg-limite" class="mensaje-bloqueo" style="display: none;">
+                Has alcanzado el límite diario de intentos permitido para este reto.
+            </div>
+        </div>
+
+        <div id="pantalla-juego" class="pantalla">
+            <div class="tablero-juego">
+                <div class="columna">
+                    <h2>Emparejamientos</h2>
+                    <div id="lista-emparejamientos" class="lista-palabras">
+                        </div>
+                </div>
+
+                <div class="columna">
+                    <h2>Significados en Español</h2>
+                    <div id="banco-opciones" class="banco-opciones">
+                        </div>
+                </div>
+            </div>
+            <button id="btn-evaluar" class="btn btn-evaluar">Evaluar Respuestas</button>
+        </div>
+
+        <div id="pantalla-resultados" class="pantalla">
+            <h2>¡Actividad Finalizada!</h2>
+            <div class="marcador-puntos"><span id="lbl-puntos">0</span> / 10</div>
+            <div id="lbl-feedback" class="feedback-mensaje">Buen esfuerzo.</div>
+            <button id="btn-regresar" class="btn">Volver al Portal</button>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURACIÓN CENTRALIZADA
+        const CONFIG = {
+            WEB_APP_URL: "https://script.google.com/macros/s/AKfycbwX5w8iiwkJVbGtpz-5f20U9jue2MC0vouE3blkHXo9CIMqg9bvCZrAYE8WKxH4gXGWzg/exec",
+            NOMBRE_RETO: "RELACIONA PALABRAS",
+            PORTAL_RETORNO: "https://americordzn-karate.github.io/retos/"
+        };
+
+        // BANCO TOTAL DE PALABRAS (25 PAREJAS)
+        const BANCO_PALABRAS = [
+            { jp: "Ichi", es: "Uno" },
+            { jp: "Ni", es: "Dos" },
+            { jp: "San", es: "Tres" },
+            { jp: "Shi", es: "Cuatro" },
+            { jp: "Go", es: "Cinco" },
+            { jp: "Roku", es: "Seis" },
+            { jp: "Sichi", es: "Siete" },
+            { jp: "Hachi", es: "Ocho" },
+            { jp: "Kyū", es: "Nueve" },
+            { jp: "Jū", es: "Diez" },
+            { jp: "Aka", es: "Rojo" },
+            { jp: "Ao", es: "Azul" },
+            { jp: "Shiro", es: "Blanco" },
+            { jp: "Kuro", es: "Negro" },
+            { jp: "Dachi", es: "Postura" },
+            { jp: "Tuski", es: "Puño" },
+            { jp: "Mae", es: "Adelante" },
+            { jp: "Ushiro", es: "Atrás" },
+            { jp: "Hidari", es: "Izquierda" },
+            { jp: "Migi", es: "Derecha" },
+            { jp: "Kamae", ph: "Guardia", es: "Guardia" },
+            { jp: "Jodan", es: "Parte alta" },
+            { jp: "Gedan", es: "Parte baja" },
+            { jp: "Chudan", es: "Parte media" },
+            { jp: "Obi", es: "Cinturón" }
+        ];
+
+        // VARIABLES DE SESIÓN Y PARÁMETROS URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const nombreAlumno = urlParams.get('nombre') || "Invitado";
+        
+        let palabrasSeleccionadas = [];
+        let tarjetaArrastrada = null;
+
+        // ELEMENTOS DEL DOM
+        const capaCarga = document.getElementById("capa-carga");
+        const pInicio = document.getElementById("pantalla-inicio");
+        const pJuego = document.getElementById("pantalla-juego");
+        const pResultados = document.getElementById("pantalla-resultados");
+        const btnIniciar = document.getElementById("btn-iniciar");
+        const btnEvaluar = document.getElementById("btn-evaluar");
+        const btnRegresar = document.getElementById("btn-regresar");
+
+        // INICIALIZACIÓN DE LA APLICACIÓN
+        window.addEventListener("DOMContentLoaded", () => {
+            document.getElementById("lbl-nombre-alumno").textContent = nombreAlumno;
+            verificarLimiteDiario();
+        });
+
+        // FUNCIÓN DE LECTURA DE LÍMITES DIARIOS (doGet)
+        function verificarLimiteDiario() {
+            if (nombreAlumno === "Invitado") {
+                capaCarga.style.display = "none";
+                pInicio.classList.add("activa");
+                btnIniciar.disabled = false;
+                return;
+            }
+
+            fetch(CONFIG.WEB_APP_URL)
+                .then(res => res.json())
+                .then(data => {
+                    capaCarga.style.display = "none";
+                    pInicio.classList.add("activa");
+
+                    // Determinar límite diario del reto desde la tabla Catalogo_Retos
+                    let limitePermitido = 999; 
+                    if (data.retos && Array.isArray(data.retos)) {
+                        const infoReto = data.retos.find(r => r.nombre === CONFIG.NOMBRE_RETO);
+                        if (infoReto && infoReto.diario_permitido !== undefined) {
+                            limitePermitido = parseInt(infoReto.diario_permitido) || 999;
+                        }
+                    }
+
+                    // Determinar intentos realizados hoy por el alumno
+                    let intentosHoy = 0;
+                    const hashHoy = `${nombreAlumno}_${CONFIG.NOMBRE_RETO}`;
+                    if (data.intentosHoy && data.intentosHoy[hashHoy] !== undefined) {
+                        intentosHoy = parseInt(data.intentosHoy[hashHoy]) || 0;
+                    }
+
+                    // Evaluar restricción de acceso
+                    if (intentosHoy >= limitePermitido) {
+                        btnIniciar.disabled = true;
+                        document.getElementById("msg-limite").style.display = "block";
+                    } else {
+                        btnIniciar.disabled = false;
+                    }
+                })
+                .catch(err => {
+                    console.error("Error al conectar con la base de datos:", err);
+                    capaCarga.style.display = "none";
+                    pInicio.classList.add("activa");
+                    btnIniciar.disabled = false; // Fallback de seguridad para permitir juego si falla red
+                });
+        }
+
+        // EVENTOS DE NAVEGACIÓN ENTRE PANTALLAS
+        btnIniciar.addEventListener("click", () => {
+            pInicio.classList.remove("activa");
+            pJuego.classList.add("activa");
+            prepararTableroJuego();
+        });
+
+        btnEvaluar.addEventListener("click", evaluarRespuestas);
+
+        btnRegresar.addEventListener("click", () => {
+            // Regresa preservando exactamente todos los parámetros URL originales del portal
+            window.location.href = CONFIG.PORTAL_RETORNO + "?" + urlParams.toString();
+        });
+
+        // LÓGICA INTERNA Y CONSTRUCCIÓN DEL JUEGO
+        function prepararTableroJuego() {
+            // 1. Barajar el banco completo y extraer exactamente 10 elementos aleatorios
+            const copiaBanco = [...BANCO_PALABRAS];
+            copiaBanco.sort(() => Math.random() - 0.5);
+            palabrasSeleccionadas = copiaBanco.slice(0, 10);
+
+            // 2. Generar lista de emparejamientos en la columna izquierda (Orden Japonés)
+            const listaEmparejamientos = document.getElementById("lista-emparejamientos");
+            listaEmparejamientos.innerHTML = "";
+
+            palabrasSeleccionadas.forEach((item, index) => {
+                const contenedorFila = document.createElement("div");
+                contenedorFila.className = "item-emparejado";
+
+                const divJp = document.createElement("div");
+                divJp.className = "palabra-jp";
+                divJp.textContent = item.jp;
+                divJp.setAttribute("data-correct-es", item.es);
+
+                const divDrop = document.createElement("div");
+                divDrop.className = "zona-soltar";
+                divDrop.setAttribute("data-indice", index);
+
+                contenedorFila.appendChild(divJp);
+                contenedorFila.appendChild(divDrop);
+                listaEmparejamientos.appendChild(contenedorFila);
+            });
+
+            // 3. Generar banco de opciones desordenado en la columna derecha (Orden Español)
+            const listaSignificados = palabrasSeleccionadas.map(p => p.es);
+            listaSignificados.sort(() => Math.random() - 0.5); // Barajar significados
+
+            const bancoOpciones = document.getElementById("banco-opciones");
+            bancoOpciones.innerHTML = "";
+
+            listaSignificados.forEach((significado, index) => {
+                const divEs = document.createElement("div");
+                divEs.className = "palabra-es";
+                divEs.textContent = significado;
+                divEs.id = `drag-es-${index}`;
+                divEs.setAttribute("draggable", "true");
+
+                bancoOpciones.appendChild(divEs);
+            });
+
+            configurarManejadoresDragAndDrop();
+        }
+
+        // LÓGICA DE ARRASTRAR Y SOLTAR (DRAG AND DROP)
+        function configurarManejadoresDragAndDrop() {
+            const tarjetasEs = document.querySelectorAll(".palabra-es");
+            const zonasSoltar = document.querySelectorAll(".zona-soltar");
+            const bancoOpciones = document.getElementById("banco-opciones");
+
+            // Eventos de las tarjetas arrastrables
+            tarjetasEs.forEach(tarjeta => {
+                tarjeta.addEventListener("dragstart", (e) => {
+                    tarjetaArrastrada = tarjeta;
+                    tarjeta.classList.add("arrastrando");
+                    e.dataTransfer.setData("text/plain", tarjeta.id);
+                });
+
+                tarjeta.addEventListener("dragend", () => {
+                    tarjeta.classList.remove("arrastrando");
+                });
+            });
+
+            // Eventos sobre las zonas receptoras de caída
+            zonasSoltar.forEach(zona => {
+                zona.addEventListener("dragover", (e) => {
+                    e.preventDefault();
+                    zona.classList.add("dragover");
+                });
+
+                zona.addEventListener("dragleave", () => {
+                    zona.classList.remove("dragover");
+                });
+
+                zona.addEventListener("drop", (e) => {
+                    e.preventDefault();
+                    zona.classList.remove("dragover");
+
+                    // Si la zona ya contiene una palabra, regresarla al banco original
+                    if (zona.children.length > 0) {
+                        const tarjetaExistente = zona.children[0];
+                        bancoOpciones.appendChild(tarjetaExistente);
+                    }
+
+                    zona.appendChild(tarjetaArrastrada);
+                });
+            });
+
+            // Permitir devolver las tarjetas al banco de opciones
+            bancoOpciones.addEventListener("dragover", (e) => {
+                e.preventDefault();
+            });
+
+            bancoOpciones.addEventListener("drop", (e) => {
+                e.preventDefault();
+                bancoOpciones.appendChild(tarjetaArrastrada);
+            });
+        }
+
+        // EVALUACIÓN DE RESPUESTAS Y ENVÍO POST (doPost)
+        function evaluarRespuestas() {
+            const filasJuego = document.querySelectorAll(".item-emparejado");
+            let aciertos = 0;
+
+            filasJuego.forEach(fila => {
+                const divJp = fila.querySelector(".palabra-jp");
+                const respuestaCorrecta = divJp.getAttribute("data-correct-es");
+                const zonaDrop = fila.querySelector(".zona-soltar");
+                
+                const tarjetaRespuesta = zonaDrop.children[0];
+                const respuestaUsuario = tarjetaRespuesta ? tarjetaRespuesta.textContent.trim() : "";
+
+                // Cambiar estilos visuales de validación
+                if (respuestaUsuario === respuestaCorrecta) {
+                    aciertos++;
+                    zonaDrop.className = "zona-soltar correcto";
+                } else {
+                    zonaDrop.className = "zona-soltar incorrecto";
+                }
+            });
+
+            // Deshabilitar tarjetas para evitar ediciones posteriores a la evaluación
+            document.querySelectorAll(".palabra-es").forEach(t => {
+                t.setAttribute("draggable", "false");
+                t.style.cursor = "default";
+            });
+            btnEvaluar.disabled = true;
+
+            // Envío automatizado de resultados a Google Sheets (Tabla Retos)
+            enviarResultadosBaseDatos(aciertos);
+        }
+
+        function enviarResultadosBaseDatos(puntuacionFinal) {
+            // Preparar el paquete JSON de envío
+            const payload = {
+                nombre_alumno: nombreAlumno,
+                nombre_reto: CONFIG.NOMBRE_RETO,
+                puntos: parseInt(puntuacionFinal)
+            };
+
+            // Ejecución silenciosa de envío mediante fetch modo no-cors
+            fetch(CONFIG.WEB_APP_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(() => {
+                console.log("Datos del reto registrados con éxito.");
+            })
+            .catch(err => {
+                console.error("Error de red al registrar puntuación:", err);
+            })
+            .finally(() => {
+                // Desplegar pantalla final tras procesar el envío
+                mostrarPantallaFinal(puntuacionFinal);
+            });
+        }
+
+        function mostrarPantallaFinal(puntosLogrados) {
+            pJuego.classList.remove("activa");
+            pResultados.classList.add("activa");
+            
+            document.getElementById("lbl-puntos").textContent = puntosLogrados;
+
+            // Retroalimentación basada en el rendimiento académico del alumno
+            const lblFeedback = document.getElementById("lbl-feedback");
+            if (puntosLogrados === 10) {
+                lblFeedback.textContent = "¡Excelente! Dominas a la perfección el vocabulario técnico. ¡Oss!";
+                lblFeedback.style.color = "var(--color-verde)";
+            } else if (puntosLogrados >= 7) {
+                lblFeedback.textContent = "¡Buen trabajo! Tienes un gran conocimiento de los términos básicos.";
+                lblFeedback.style.color = "var(--color-accent)";
+            } else {
+                lblFeedback.textContent = "Sigue repasando el vocabulario y vuelve a intentarlo mañana.";
+                lblFeedback.style.color = "var(--color-rojo)";
+            }
+        }
+    </script>
+</body>
+</html>
